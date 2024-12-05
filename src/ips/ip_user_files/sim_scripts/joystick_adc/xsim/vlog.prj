@@ -1,0 +1,7 @@
+verilog xil_defaultlib  \
+"../../../../joystick_adc/joystick_adc.v" \
+
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

@@ -1,0 +1,26 @@
+[*]
+[*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
+[*] Wed Nov 20 12:29:11 2024
+[*]
+[dumpfile] "/home/b83c/fpga/vga/sim/waveform.vcd"
+[dumpfile_mtime] "Wed Nov 20 12:25:26 2024"
+[dumpfile_size] 1328
+[savefile] "/home/b83c/fpga/vga/sim/idk.gtkw"
+[timestart] 0
+[size] 1908 1097
+[pos] -1 -1
+*-11.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.tb1.
+[sst_width] 273
+[signals_width] 110
+[sst_expanded] 1
+[sst_vpaned_height] 329
+@22
+TOP.tb1.ascii.addr[6:0]
+@28
+TOP.tb1.ascii.clk
+@23
+TOP.tb1.ascii.data[63:0]
+[pattern_trace] 1
+[pattern_trace] 0

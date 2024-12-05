@@ -1,0 +1,14 @@
+[[language]]
+name = "verilog"
+# workspace-lsp-roots = ["src"]
+
+[language-server.veridian]
+command = "veridian"
+required-root-patterns = ["veridian.yml", ".git"]
+auto-format = true
+
+
+[language-server.veridian.config]
+command = "veridian"
+auto-format = true
+

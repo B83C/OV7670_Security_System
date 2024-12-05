@@ -1,3 +1,5 @@
 .Xil/
 clockInfo.txt
 target/*
+*.txt
+
