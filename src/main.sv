@@ -112,11 +112,13 @@ module main #(
     logic [$clog2(C_H) - 1: 0] y_cntr = 0;
     logic [$clog2(HCC) - 1: 0] c_x = 0;
     logic [$clog2(VCC) - 1: 0] c_y = 0;
-    logic [$clog2(128)- 1:0] character_addr;
+    logic [$clog2(96)- 1:0] character_addr;
+    wire [$clog2(96)- 1:0] ascii_addr;
+    assign ascii_addr = character_addr < 32? 0: character_addr - 32; //Address space compression
     wire [C_W*C_H - 1: 0] char_buf;
     wire char_pix [C_H - 1 : 0][C_W - 1 : 0];
     assign char_pix = {>>{char_buf}};
-    rom #(.WIDTH(C_W*C_H), .DEPTH(128), .binaryFile("ascii.rom"), .RISING_EDGE(0)) ascii (.addr(character_addr), .data(char_buf), .clk(clk_108));
+    rom #(.WIDTH(C_W*C_H), .DEPTH(96), .binaryFile("ascii.rom"), .RISING_EDGE(0)) ascii (.addr(ascii_addr), .data(char_buf), .clk(clk_108));
 
 
     logic clka /* synthesis syn_isclock = 1 */;
@@ -225,15 +227,53 @@ module main #(
     logic pixel_half = 0;
     logic [1:0] counter = 0;
 
+    logic enc_en = 0;
+    logic enc_rst_n = 1;
+    wire [$clog2(640) - 1:0] enc_ind;
+    wire [5:0] enc_sind;
+
+    logic [$clog2(640 * 480) - 1:0] ind_c;
+    logic [$clog2(64 * 480) - 1:0] sind_c ;
+    logic [$clog2(480) - 1:0] frame_acc_cntr;
+    logic [31:0] acc_cntr;
+    logic [$clog2(640) - 1:0] ind_avg;
+    logic [$clog2(64) - 1:0] sind_avg;
+
+    logic [$clog2(640) : 0] dbg_cntr = 0;
+
+    qoi_rgb444_encoder enc(.clk(pclk), .en(enc_en), .rst_n(enc_rst_n), .rgb(dina), .ind(enc_ind), .sind(enc_sind));
+
+    function byte hex(logic [3:0] in);
+        return {4'b0, in} + ((in < 10)?  "0" :  "A" - 10);
+    endfunction
+
     //Clock slower than ram
     always @(posedge pclk) begin
         wea <= 0;
+        enc_rst_n <= 1;
         case(state)
             WAIT_FRAME_START: begin
                 if(capture) begin
                     state <= (!vref) ? ROW_CAPTURE: WAIT_FRAME_START;
                     addra <= 0;
                     pixel_half <= 0;
+                    enc_rst_n <= 0;
+                    // frame_acc_cntr <= frame_acc_cntr + 1;
+                    text_buffer[3][41+14 +:3] <= { <<8{hex({2'b0, ind_c[9:8]}), hex(ind_c[7:4]), hex(ind_c[3:0])}};
+                    text_buffer[4][41+14 +:2] <= { <<8{hex({3'b0, sind_c[4]}), hex(sind_c[3:0])}};
+                    // if(frame_acc_cntr == 480 - 1) begin
+                        // frame_acc_cntr <= 0;
+                        // acc_cntr <= acc_cntr + 1;
+                        // if(acc_cntr == 0) begin
+                    // ind_avg <= 0;
+                    // sind_avg <= 0;
+                    // ind_c <= 0;
+                    // sind_c <= 0;
+                        // end else begin
+                        //     ind_avg <=  $clog2(640)'(ind_avg + ((ind_c/480) - ind_avg)/(acc_cntr + 1));
+                        //     sind_avg <=  $clog2(64)'( sind_avg + ((sind_c/480) - sind_avg)/(acc_cntr + 1));
+                        // end
+                    // end                
                 end
             end
             ROW_CAPTURE: begin
@@ -246,12 +286,34 @@ module main #(
                         if(counter == 2'b11) begin
                             addra <= addra + 1;
                         end
+                        enc_en <= 0;
                     end else begin
                         dina[3:0] <= D[7:4];
                         wea <= 1;
+                        enc_en <= 1;
+                        dbg_cntr <= dbg_cntr + 1;
                     end
                 end else begin
                     counter <= 0;
+                    enc_en <= 0;
+                    dbg_cntr <= 0;
+                    enc_rst_n <= 0;
+                    if (dbg_cntr == 640) begin //Test
+                        if (enc_ind > ind_c) ind_c <= enc_ind;
+                        if (enc_sind > sind_c) sind_c <= enc_sind;
+                        // ind_c <= ind_c + enc_ind;
+                        // sind_c <= sind_c + enc_sind;
+                    end
+                end
+                if (vref) begin
+                    if(buttons[3]) begin
+                        ind_c <= 0;
+                        sind_c <= 0;
+                        // ind_avg <=  ind_c;
+                        // sind_avg <=  sind_c;
+                        // ind_avg <=  ind_c / 480;
+                        // sind_avg <=  sind_c / 480;
+                    end                
                 end
             end
             STOP: begin
@@ -263,6 +325,8 @@ module main #(
         counter = 0;
         text_buffer[1][41+:5] = { <<8{"hello"}};
         text_buffer[2][41+:6] = { <<8{"Servo:"}};
+        text_buffer[3][41+:14] = { <<8{"Avg stream sz:"}};
+        text_buffer[4][41+:14] = { <<8{"Avg stack cnt:"}};
     end
     // assign JC = {1'b0, 1'b0, hsync, vsync};
 endmodule
