@@ -1,1 +1,1 @@
-ips/clk_mcmm/clk_mcmm_clk_wiz.v
+../ips/clk_mcmm/clk_mcmm_clk_wiz.v

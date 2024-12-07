@@ -1,0 +1,2 @@
+rgb_stack.v,verilog,xil_defaultlib,../../../../rgb_stack/sim/rgb_stack.v,
+glbl.v,Verilog,xil_defaultlib,glbl.v

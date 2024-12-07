@@ -1,0 +1,1 @@
+../ips/enc_buff/synth/enc_buff.vhd

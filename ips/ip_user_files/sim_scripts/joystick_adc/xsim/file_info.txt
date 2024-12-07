@@ -1,0 +1,2 @@
+joystick_adc.v,verilog,xil_defaultlib,../../../../joystick_adc/joystick_adc.v,
+glbl.v,Verilog,xil_defaultlib,glbl.v

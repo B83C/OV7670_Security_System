@@ -120,32 +120,51 @@ module main #(
     assign char_pix = {>>{char_buf}};
     rom #(.WIDTH(C_W*C_H), .DEPTH(96), .binaryFile("ascii.rom"), .RISING_EDGE(0)) ascii (.addr(ascii_addr), .data(char_buf), .clk(clk_108));
 
-
-    logic clka /* synthesis syn_isclock = 1 */;
-    logic ena = 1;
+    logic enable_buffer_a;
+    logic write_to_buffer = 0;
     logic [0:0]wea = 0;
-    logic [16:0]addra = 0;
-    logic [11:0]dina = 0;
+    logic [$clog2(480) - 1:0] addra = 0;
+    logic [320- 1:0][7:0] wcfb;
+    logic [64 - 1: 0][11:0] wrgbs;
 
-    logic clkb /* synthesis syn_isclock = 1 */;
-    logic enb;
-    logic [16:0]addrb = 0;
-    logic [11:0]doutb;
+    logic enb = 0;
+    logic [$clog2(480) - 1:0] addrb = 0;
+    logic [320- 1:0][7:0] rcfb = 0;
+    logic [64 - 1: 0][11:0] rrgbs = 0;
 
-    buffer_mem bm (.clka(clk_25), .ena(ena), .wea(wea), .addra(addra), .dina(dina), .clkb(clk_108), .enb(enb), .addrb(addrb), .doutb(doutb));
+    logic rst_dec = 1;
+    wire [$clog2(64) - 1:0] dec_stack_ind;
+    wire [$clog2(320) - 1:0] dec_stream_ind;
+    wire [12 - 1:0] dec_rgb;
+    wire dec_done;
 
-    // vga vga_u0 (.pclk(clk_108), .r(r), .g(g), .b(b), .hsync(hsync), .vsync(vsync));
     wire [$clog2(1280):0] x;
     wire [$clog2(1024):0] y;
-    wire active;
-    vga_ctrl vga_c (.pclk(clk_108), .x(x), .y(y), .hsync(hsync), .vsync(vsync), .active(active));
+    wire vga_active;
 
-    assign enb = active;
-    assign clkb = clk_108;
+    enc_buff fb (.clka(clk_25), .ena(enable_buffer_a), .wea(write_to_buffer), .addra(addra), .dina(wcfb), .clkb(clk_108), .enb(enb), .addrb(addrb), .doutb(rcfb));
+
+    rgb_stack rgbstack (.clka(clk_25), .ena(enable_buffer_a), .wea(write_to_buffer), .addra(addra), .dina(wrgbs), .clkb(clk_108), .enb(enb), .addrb(addrb), .doutb(rrgbs));
+
+    qoi_rgb444_decoder dec (
+        .clk(clk_108),
+        .en(vga_active && x < 640 && y < 480),
+        .rst_n(rst_dec),
+        .rgbstack(rrgbs[dec_stack_ind]),
+        .input_stream({rcfb[dec_stream_ind], rcfb[dec_stream_ind + 1]}),
+        .rgb(dec_rgb),
+        .stack_ind(dec_stack_ind),
+        .stream_ind(dec_stream_ind),
+        .done(dec_done)
+    );
+
+    vga_ctrl vga_c (.pclk(clk_108), .x(x), .y(y), .hsync(hsync), .vsync(vsync), .active(vga_active));
 
     always @(posedge clk_108) begin
         {r,g,b} <= 12'b0;
-        if (active) begin
+        rst_dec <= 1;
+        enb <= 0;
+        if (vga_active) begin
             if(x < x_bound && y < y_bound) begin
                 scale_cntr_x <= scale_cntr_x + 1;
                 if(scale_cntr_x == SCALE_X - 1) begin
@@ -181,10 +200,16 @@ module main #(
                 {r,g,b} <= {12{char_pix[y_cntr][x_cntr]}};
             end             
             if (x < 640 && y < 480) begin
-                if (x[1:0] == 2'b11) begin
+                // if (x[1:0] == 2'b11) begin
+                //     addrb <= addrb + 1;
+                // end
+                {r,g,b} <= dec_rgb;
+            end else if (x >= 640 && y < 480) begin
+                rst_dec <= 0;
+                if (x == 640) begin
                     addrb <= addrb + 1;
+                    enb <= 1;
                 end
-                {r,g,b} <= doutb;
             end else if(y >= 480) begin
                 addrb <= 0;
             end
@@ -227,29 +252,24 @@ module main #(
     logic pixel_half = 0;
     logic [1:0] counter = 0;
 
+    logic [11:0] crgb;
     logic enc_en = 0;
     logic enc_rst_n = 1;
-    wire [$clog2(640) - 1:0] enc_ind;
-    wire [5:0] enc_sind;
 
-    logic [$clog2(640 * 480) - 1:0] ind_c;
-    logic [$clog2(64 * 480) - 1:0] sind_c ;
-    logic [$clog2(480) - 1:0] frame_acc_cntr;
-    logic [31:0] acc_cntr;
-    logic [$clog2(640) - 1:0] ind_avg;
-    logic [$clog2(64) - 1:0] sind_avg;
+    wire capped;
 
-    logic [$clog2(640) : 0] dbg_cntr = 0;
-
-    qoi_rgb444_encoder enc(.clk(pclk), .en(enc_en), .rst_n(enc_rst_n), .rgb(dina), .ind(enc_ind), .sind(enc_sind));
+    qoi_rgb444_encoder enc(.clk(pclk), .en(enc_en), .rst_n(enc_rst_n), .rgb(crgb), .output_stream(wcfb), .rgbstack(wrgbs), .capped(capped));
 
     function byte hex(logic [3:0] in);
         return {4'b0, in} + ((in < 10)?  "0" :  "A" - 10);
     endfunction
 
+    assign enable_buffer_a = 1;
+
     //Clock slower than ram
     always @(posedge pclk) begin
         wea <= 0;
+        write_to_buffer <= 0;
         enc_rst_n <= 1;
         case(state)
             WAIT_FRAME_START: begin
@@ -258,9 +278,10 @@ module main #(
                     addra <= 0;
                     pixel_half <= 0;
                     enc_rst_n <= 0;
+                    led[0] <= ~led[0];
                     // frame_acc_cntr <= frame_acc_cntr + 1;
-                    text_buffer[3][41+14 +:3] <= { <<8{hex({2'b0, ind_c[9:8]}), hex(ind_c[7:4]), hex(ind_c[3:0])}};
-                    text_buffer[4][41+14 +:2] <= { <<8{hex({3'b0, sind_c[4]}), hex(sind_c[3:0])}};
+                    // text_buffer[3][41+14 +:3] <= { <<8{hex({2'b0, ind_c[9:8]}), hex(ind_c[7:4]), hex(ind_c[3:0])}};
+                    // text_buffer[4][41+14 +:2] <= { <<8{hex({3'b0, sind_c[4]}), hex(sind_c[3:0])}};
                     // if(frame_acc_cntr == 480 - 1) begin
                         // frame_acc_cntr <= 0;
                         // acc_cntr <= acc_cntr + 1;
@@ -281,34 +302,34 @@ module main #(
                 if(href) begin
                     pixel_half <= ~pixel_half;
                     if (!pixel_half) begin
-                        dina[11:4] <= D;
-                        counter <= counter + 1;
-                        if(counter == 2'b11) begin
-                            addra <= addra + 1;
-                        end
+                        crgb[11:4] <= D;
+                        // counter <= counter + 1;
+                        // if(counter == 2'b11) begin
+                        //     // addra <= addra + 1;
+                        // end
                         enc_en <= 0;
                     end else begin
-                        dina[3:0] <= D[7:4];
+                        crgb[3:0] <= D[7:4];
                         wea <= 1;
                         enc_en <= 1;
-                        dbg_cntr <= dbg_cntr + 1;
+                        // dbg_cntr <= dbg_cntr + 1;
                     end
                 end else begin
-                    counter <= 0;
+                    // counter <= 0;
                     enc_en <= 0;
-                    dbg_cntr <= 0;
                     enc_rst_n <= 0;
-                    if (dbg_cntr == 640) begin //Test
-                        if (enc_ind > ind_c) ind_c <= enc_ind;
-                        if (enc_sind > sind_c) sind_c <= enc_sind;
-                        // ind_c <= ind_c + enc_ind;
-                        // sind_c <= sind_c + enc_sind;
-                    end
+                    write_to_buffer <= 1;
+                    // if (dbg_cntr == 640) begin //Test
+                    //     if (enc_ind > ind_c) ind_c <= enc_ind;
+                    //     if (enc_sind > sind_c) sind_c <= enc_sind;
+                    //     // ind_c <= ind_c + enc_ind;
+                    //     // sind_c <= sind_c + enc_sind;
+                    // end
                 end
                 if (vref) begin
                     if(buttons[3]) begin
-                        ind_c <= 0;
-                        sind_c <= 0;
+                        // ind_c <= 0;
+                        // sind_c <= 0;
                         // ind_avg <=  ind_c;
                         // sind_avg <=  sind_c;
                         // ind_avg <=  ind_c / 480;
@@ -328,5 +349,6 @@ module main #(
         text_buffer[3][41+:14] = { <<8{"Avg stream sz:"}};
         text_buffer[4][41+:14] = { <<8{"Avg stack cnt:"}};
     end
+
     // assign JC = {1'b0, 1'b0, hsync, vsync};
 endmodule

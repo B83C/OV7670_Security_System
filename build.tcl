@@ -1,19 +1,21 @@
 source init.tcl 
 
-read_verilog -sv -quiet [glob -nocomplain src/*.svh]
-set_property IS_GLOBAL_INCLUDE 1 [get_files src/defs.svh]
-read_verilog -sv -quiet [glob -nocomplain src/*.sv]
-read_verilog -quiet [glob -nocomplain src/*.v]
-# read_verilog -quiet [glob -nocomplain src/ips/*.v]
-read_vhdl -quiet [glob -nocomplain src/*.vhdl]
-read_xdc -quiet [glob src/xdc/*.xdc]
+cd $working_dir
 
-set synth_checkpoint "$outputDir/post_synth.dcp"
-set opt_checkpoint "$outputDir/post_opt.dcp"
-set place_checkpoint "$outputDir/post_place.dcp"
-set route_checkpoint "$outputDir/post_route.dcp"
+read_verilog -sv -quiet [glob -nocomplain $src_dir/*.svh]
+set_property IS_GLOBAL_INCLUDE 1 [get_files $src_dir/defs.svh]
+read_verilog -sv -quiet [glob -nocomplain $src_dir/*.sv]
+read_verilog -quiet [glob -nocomplain $src_dir/*.v]
+# read_verilog -quiet [glob -nocomplain $src_dir/ips/*.v]
+read_vhdl -quiet [glob -nocomplain $src_dir/*.vhdl]
+read_xdc -quiet [glob $src_dir/xdc/*.xdc]
 
-set source_files [concat [glob -nocomplain src/*.sv] [glob -nocomplain src/*.svh] [glob -nocomplain src/*.v] [glob -nocomplain src/*.vhdl] [glob src/xdc/*.xdc] [glob src/ips/*/*.xci]]
+set synth_checkpoint "$checkpoints_dir/post_synth.dcp"
+set opt_checkpoint "$checkpoints_dir/post_opt.dcp"
+set place_checkpoint "$checkpoints_dir/post_place.dcp"
+set route_checkpoint "$checkpoints_dir/post_route.dcp"
+
+set source_files [concat [glob -nocomplain $src_dir/*.sv] [glob -nocomplain $src_dir/*.svh] [glob -nocomplain $src_dir/*.v] [glob -nocomplain $src_dir/*.vhdl] [glob $src_dir/xdc/*.xdc] [glob $ips_dir/*/*.xci]]
 
 proc files_changed {files checkpoints} {
     foreach file $files {
@@ -29,13 +31,12 @@ proc files_changed {files checkpoints} {
     return 0
 }
 
-# Create output directory if it doesn't exist
-if {![file exists $outputDir]} {
-    file mkdir $outputDir
-}
+# if {![file exists $outputDir]} {
+#     file mkdir $outputDir
+# }
 
 # Read IP cores
-foreach folder [glob -nocomplain src/ips/*] {
+foreach folder [glob -nocomplain $ips_dir/*] {
 	set checkpoint [glob -nocomplain $folder/*.dcp]
 	set xcis [glob -nocomplain $folder/*.xci]
 	set ip [file tail $folder]
@@ -68,7 +69,35 @@ if {![files_changed $source_files $synth_checkpoint]} {
     write_checkpoint -force $synth_checkpoint
 }
 
-# set first_arg [lindex $argv 0]
+# create_debug_core u_ila_0 ila
+# #set debug core properties
+# set_property C_DATA_DEPTH 16384 [get_debug_cores u_ila_0]
+# set_property C_TRIGIN_EN false [get_debug_cores u_ila_0]
+# set_property C_TRIGOUT_EN false [get_debug_cores u_ila_0]
+# set_property C_ADV_TRIGGER false [get_debug_cores u_ila_0]
+# set_property C_INPUT_PIPE_STAGES 0 [get_debug_cores u_ila_0]
+# set_property C_EN_STRG_QUAL false [get_debug_cores u_ila_0]
+# set_property ALL_PROBE_SAME_MU true [get_debug_cores u_ila_0]
+# set_property ALL_PROBE_SAME_MU_CNT 1 [get_debug_cores u_ila_0]
+# #connect the probe ports in the debug core to the signals being probed in the design
+# set_property port_width 1 [get_debug_ports u_ila_0/clk]
+# connect_debug_port u_ila_0/clk [get_nets [list pclk]]
+
+# set_property port_width 8 [get_debug_ports u_ila_0/probe0]
+# connect_debug_port u_ila_0/probe0 [get_nets [list wcfb]]
+# # create_debug_port u_ila_0 probe
+
+# create_debug_port u_ila_0 probe
+# set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe1]
+# set_property port_width 1 [get_debug_ports u_ila_0/probe1]
+# connect_debug_port u_ila_0/probe1 [get_nets [list enc_rst_n]]
+
+# set_property C_CLK_INPUT_FREQ_HZ 25000000 [get_debug_cores dbg_hub]
+# set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
+# set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
+# connect_debug_port dbg_hub/clk [get_nets clk_BUFG]
+# save_constraints
+
 # put $first_arg
 # if { $first_arg eq "debug"} {
 #     create_debug_core u_ila_0 ila 
@@ -129,10 +158,10 @@ if {![files_changed $source_files $route_checkpoint]} {
 }
 
 # Generate reports
-report_route_status -file $outputDir/post_route_status.rpt
-report_timing_summary -file $outputDir/post_route_timing_summary.rpt
-report_power -file $outputDir/post_route_power.rpt
-report_drc -file $outputDir/post_imp_drc.rpt
+report_route_status -file $report_dir/post_route_status.rpt
+report_timing_summary -file $report_dir/post_route_timing_summary.rpt
+report_power -file $report_dir/post_route_power.rpt
+report_drc -file $report_dir/post_imp_drc.rpt
 
 # Write the bitstream
-write_bitstream -force $outputDir/BASYS3.bit
+write_bitstream -force $output_dir/BASYS3.bit

@@ -1,0 +1,2 @@
+enc_buff.v,verilog,xil_defaultlib,../../../../enc_buff/sim/enc_buff.v,
+glbl.v,Verilog,xil_defaultlib,glbl.v

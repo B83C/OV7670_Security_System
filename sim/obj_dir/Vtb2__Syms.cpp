@@ -21,7 +21,7 @@ void Vtb2__Syms::_traceDump() {
 void Vtb2__Syms::_traceDumpOpen() {
     const VerilatedLockGuard lock(__Vm_dumperMutex);
     if (VL_UNLIKELY(!__Vm_dumperp)) {
-        __Vm_dumperp = new VerilatedVcdC();
+        __Vm_dumperp = new VerilatedFstC();
         __Vm_modelp->trace(__Vm_dumperp, 0, 0);
         std::string dumpfile = _vm_contextp__->dumpfileCheck();
         __Vm_dumperp->open(dumpfile.c_str());
@@ -43,7 +43,7 @@ Vtb2__Syms::Vtb2__Syms(VerilatedContext* contextp, const char* namep, Vtb2* mode
     , TOP{this, namep}
 {
         // Check resources
-        Verilated::stackCheck(152);
+        Verilated::stackCheck(154);
     // Configure time unit / time precision
     _vm_contextp__->timeunit(-9);
     _vm_contextp__->timeprecision(-12);

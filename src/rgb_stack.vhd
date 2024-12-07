@@ -1,0 +1,1 @@
+../ips/rgb_stack/synth/rgb_stack.vhd

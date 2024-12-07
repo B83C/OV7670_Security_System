@@ -1,0 +1,3 @@
+clk_mcmm_clk_wiz.v,verilog,xil_defaultlib,../../../../clk_mcmm/clk_mcmm_clk_wiz.v,incdir="../../../ipstatic"incdir="../../../ipstatic"
+clk_mcmm.v,verilog,xil_defaultlib,../../../../clk_mcmm/clk_mcmm.v,incdir="../../../ipstatic"incdir="../../../ipstatic"
+glbl.v,Verilog,xil_defaultlib,glbl.v

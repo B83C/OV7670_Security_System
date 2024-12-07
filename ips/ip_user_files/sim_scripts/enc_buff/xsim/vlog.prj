@@ -1,0 +1,7 @@
+verilog xil_defaultlib  \
+"../../../../enc_buff/sim/enc_buff.v" \
+
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

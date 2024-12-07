@@ -12,7 +12,7 @@
 
 class Vtb2__Syms;
 class Vtb2___024root;
-class VerilatedVcdC;
+class VerilatedFstC;
 
 // This class is the main interface to the Verilated model
 class alignas(VL_CACHE_LINE_BYTES) Vtb2 VL_NOT_FINAL : public VerilatedModel {
