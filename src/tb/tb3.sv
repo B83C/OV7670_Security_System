@@ -11,21 +11,21 @@ logic [11:0] rgb;
 logic enc_en = 1;
 logic enc_rst_n = 1;
 
-logic [7:0] input_stream [320 - 1:0] = '{default:0};
-logic [11:0] rgbstack [63:0] = '{default:0};
+logic [320 - 1:0][7:0] input_stream  = '{default:0};
+logic [63:0][11:0] rgbstack  = '{default:0};
 
 logic [$clog2(64) - 1:0] stack_ind;
 logic [$clog2(320) - 1:0] stream_ind;
 logic done;
 
-qoi_rgb444_decoder enc(.clk(clk), .en(enc_en), .rst_n(enc_rst_n), .rgb(rgb), .input_stream({input_stream[stream_ind], input_stream[stream_ind + 1]}), .rgbstack(rgbstack[stack_ind]), .done(done), .stack_ind(stack_ind), .stream_ind(stream_ind));
+qoi_rgb444_decoder enc(.clk(clk), .en(enc_en), .rst_n(enc_rst_n), .rgb(rgb), .input_stream(input_stream), .rgbstack(rgbstack), .done(done));
 
 always @(posedge clk) begin
   ph <= ~ph;
   if (!ph) begin
-    enc_en <= 0;
+    // enc_en <= 0;
   end else begin
-    enc_en <= 1;
+    // enc_en <= 1;
   end
 end
 

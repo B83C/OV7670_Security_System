@@ -53,14 +53,20 @@
 ------------- Begin Cut here for COMPONENT Declaration ------ COMP_TAG
 COMPONENT joystick_adc
   PORT (
+    di_in : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+    daddr_in : IN STD_LOGIC_VECTOR(6 DOWNTO 0);
+    den_in : IN STD_LOGIC;
+    dwe_in : IN STD_LOGIC;
+    drdy_out : OUT STD_LOGIC;
+    do_out : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
     dclk_in : IN STD_LOGIC;
     reset_in : IN STD_LOGIC;
     vp_in : IN STD_LOGIC;
     vn_in : IN STD_LOGIC;
     vauxp6 : IN STD_LOGIC;
     vauxn6 : IN STD_LOGIC;
-    vauxp7 : IN STD_LOGIC;
-    vauxn7 : IN STD_LOGIC;
+    vauxp14 : IN STD_LOGIC;
+    vauxn14 : IN STD_LOGIC;
     user_temp_alarm_out : OUT STD_LOGIC;
     vccint_alarm_out : OUT STD_LOGIC;
     vccaux_alarm_out : OUT STD_LOGIC;
@@ -79,14 +85,20 @@ END COMPONENT;
 ------------- Begin Cut here for INSTANTIATION Template ----- INST_TAG
 your_instance_name : joystick_adc
   PORT MAP (
+    di_in => di_in,
+    daddr_in => daddr_in,
+    den_in => den_in,
+    dwe_in => dwe_in,
+    drdy_out => drdy_out,
+    do_out => do_out,
     dclk_in => dclk_in,
     reset_in => reset_in,
     vp_in => vp_in,
     vn_in => vn_in,
     vauxp6 => vauxp6,
     vauxn6 => vauxn6,
-    vauxp7 => vauxp7,
-    vauxn7 => vauxn7,
+    vauxp14 => vauxp14,
+    vauxn14 => vauxn14,
     user_temp_alarm_out => user_temp_alarm_out,
     vccint_alarm_out => vccint_alarm_out,
     vccaux_alarm_out => vccaux_alarm_out,

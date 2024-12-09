@@ -47,19 +47,25 @@
 // PART OF THIS FILE AT ALL TIMES.
 `timescale 1ns / 1 ps
 
-(* CORE_GENERATION_INFO = "joystick_adc,xadc_wiz_v3_3_10,{component_name=joystick_adc,enable_axi=false,enable_axi4stream=false,dclk_frequency=100,enable_busy=true,enable_convst=false,enable_convstclk=false,enable_dclk=true,enable_drp=false,enable_eoc=true,enable_eos=true,enable_vbram_alaram=false,enable_vccddro_alaram=false,enable_Vccint_Alaram=true,enable_Vccaux_alaram=true,enable_vccpaux_alaram=false,enable_vccpint_alaram=false,ot_alaram=false,user_temp_alaram=true,timing_mode=continuous,channel_averaging=None,sequencer_mode=on,startup_channel_selection=contineous_sequence}" *)
+(* CORE_GENERATION_INFO = "joystick_adc,xadc_wiz_v3_3_10,{component_name=joystick_adc,enable_axi=false,enable_axi4stream=false,dclk_frequency=25,enable_busy=true,enable_convst=false,enable_convstclk=false,enable_dclk=true,enable_drp=true,enable_eoc=true,enable_eos=true,enable_vbram_alaram=false,enable_vccddro_alaram=false,enable_Vccint_Alaram=true,enable_Vccaux_alaram=true,enable_vccpaux_alaram=false,enable_vccpint_alaram=false,ot_alaram=false,user_temp_alaram=true,timing_mode=continuous,channel_averaging=None,sequencer_mode=on,startup_channel_selection=simultaneous_sampling}" *)
 
 
 module joystick_adc
           (
+          daddr_in,            // Address bus for the dynamic reconfiguration port
           dclk_in,             // Clock input for the dynamic reconfiguration port
+          den_in,              // Enable Signal for the dynamic reconfiguration port
+          di_in,               // Input data bus for the dynamic reconfiguration port
+          dwe_in,              // Write Enable for the dynamic reconfiguration port
           reset_in,            // Reset signal for the System Monitor control logic
           vauxp6,              // Auxiliary channel 6
           vauxn6,
-          vauxp7,              // Auxiliary channel 7
-          vauxn7,
+          vauxp14,             // Auxiliary channel 14
+          vauxn14,
           busy_out,            // ADC Busy signal
           channel_out,         // Channel Selection Outputs
+          do_out,              // Output data bus for dynamic reconfiguration port
+          drdy_out,            // Data ready signal for the dynamic reconfiguration port
           eoc_out,             // End of Conversion Signal
           eos_out,             // End of Sequence Signal
           vccaux_alarm_out,    // VCCAUX-sensor alarm output
@@ -69,17 +75,23 @@ module joystick_adc
           vp_in,               // Dedicated Analog Input Pair
           vn_in);
 
+          input [6:0] daddr_in;
           input dclk_in;
+          input den_in;
+          input [15:0] di_in;
+          input dwe_in;
           input reset_in;
           input vauxp6;
           input vauxn6;
-          input vauxp7;
-          input vauxn7;
+          input vauxp14;
+          input vauxn14;
           input vp_in;
           input vn_in;
 
           output busy_out;
           output [4:0] channel_out;
+          output [15:0] do_out;
+          output drdy_out;
           output eoc_out;
           output eos_out;
           output vccaux_alarm_out;
@@ -88,11 +100,7 @@ module joystick_adc
           output alarm_out;
 
           wire GND_BIT;
-    wire [8:0] GND_BUS7;
-    wire [15:0] GND_BUS16;
           assign GND_BIT = 0;
-    assign GND_BUS7 = 7'b0000000;
-    assign GND_BUS16 = 16'b0000000000000000;
           wire [15:0] aux_channel_p;
           wire [15:0] aux_channel_n;
           wire [7:0]  alm_int;
@@ -121,8 +129,8 @@ module joystick_adc
           assign aux_channel_p[6] = vauxp6;
           assign aux_channel_n[6] = vauxn6;
 
-          assign aux_channel_p[7] = vauxp7;
-          assign aux_channel_n[7] = vauxn7;
+          assign aux_channel_p[7] = 1'b0;
+          assign aux_channel_n[7] = 1'b0;
 
           assign aux_channel_p[8] = 1'b0;
           assign aux_channel_n[8] = 1'b0;
@@ -142,17 +150,17 @@ module joystick_adc
           assign aux_channel_p[13] = 1'b0;
           assign aux_channel_n[13] = 1'b0;
 
-          assign aux_channel_p[14] = 1'b0;
-          assign aux_channel_n[14] = 1'b0;
+          assign aux_channel_p[14] = vauxp14;
+          assign aux_channel_n[14] = vauxn14;
 
           assign aux_channel_p[15] = 1'b0;
           assign aux_channel_n[15] = 1'b0;
 XADC #(
         .INIT_40(16'h0000), // config reg 0
-        .INIT_41(16'h21A1), // config reg 1
-        .INIT_42(16'h0400), // config reg 2
+        .INIT_41(16'h4101), // config reg 1
+        .INIT_42(16'h0200), // config reg 2
         .INIT_48(16'h0800), // Sequencer channel selection
-        .INIT_49(16'h00C0), // Sequencer channel selection
+        .INIT_49(16'h0040), // Sequencer channel selection
         .INIT_4A(16'h0000), // Sequencer Average selection
         .INIT_4B(16'h0000), // Sequencer Average selection
         .INIT_4C(16'h0000), // Sequencer Bipolar selection
@@ -176,19 +184,19 @@ XADC #(
 inst (
         .CONVST(GND_BIT),
         .CONVSTCLK(GND_BIT),
-        .DADDR(GND_BUS7[6:0]),
+        .DADDR(daddr_in[6:0]),
         .DCLK(dclk_in),
-        .DEN(GND_BIT),
-        .DI(GND_BUS16[15:0]),
-        .DWE(GND_BIT),
+        .DEN(den_in),
+        .DI(di_in[15:0]),
+        .DWE(dwe_in),
         .RESET(reset_in),
         .VAUXN(aux_channel_n[15:0]),
         .VAUXP(aux_channel_p[15:0]),
         .ALM(alm_int),
         .BUSY(busy_out),
         .CHANNEL(channel_out[4:0]),
-        .DO(),
-        .DRDY(),
+        .DO(do_out[15:0]),
+        .DRDY(drdy_out),
         .EOC(eoc_out),
         .EOS(eos_out),
         .JTAGBUSY(),

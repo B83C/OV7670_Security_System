@@ -14,9 +14,9 @@ module pwm_servo #(
     if (en) begin
       if (cntr == 0) begin
         signal <= 1;
-      end else if (cntr == CNTR_WIDTH'(deg) + 50) begin
+      end else if (cntr == CNTR_WIDTH'(deg) + 50 || cntr >= 250) begin
         signal <= 0;
-      end
+      end 
     end else begin
       signal <= 0;
     end

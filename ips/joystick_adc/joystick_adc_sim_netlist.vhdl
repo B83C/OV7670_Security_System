@@ -2,9 +2,9 @@
 -- Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
--- Date        : Sun Nov 24 22:44:30 2024
+-- Date        : Mon Dec  9 16:21:21 2024
 -- Host        : t14s running 64-bit Arch Linux
--- Command     : write_vhdl -force -mode funcsim /home/b83c/fpga/vga/src/ips/joystick_adc/joystick_adc_sim_netlist.vhdl
+-- Command     : write_vhdl -force -mode funcsim /home/b83c/fpga/vga/ips/joystick_adc/joystick_adc_sim_netlist.vhdl
 -- Design      : joystick_adc
 -- Purpose     : This VHDL netlist is a functional simulation representation of the design and should not be modified or
 --               synthesized. This netlist cannot be used for SDF annotated simulation.
@@ -16,14 +16,20 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 entity joystick_adc is
   port (
+    daddr_in : in STD_LOGIC_VECTOR ( 6 downto 0 );
     dclk_in : in STD_LOGIC;
+    den_in : in STD_LOGIC;
+    di_in : in STD_LOGIC_VECTOR ( 15 downto 0 );
+    dwe_in : in STD_LOGIC;
     reset_in : in STD_LOGIC;
     vauxp6 : in STD_LOGIC;
     vauxn6 : in STD_LOGIC;
-    vauxp7 : in STD_LOGIC;
-    vauxn7 : in STD_LOGIC;
+    vauxp14 : in STD_LOGIC;
+    vauxn14 : in STD_LOGIC;
     busy_out : out STD_LOGIC;
     channel_out : out STD_LOGIC_VECTOR ( 4 downto 0 );
+    do_out : out STD_LOGIC_VECTOR ( 15 downto 0 );
+    drdy_out : out STD_LOGIC;
     eoc_out : out STD_LOGIC;
     eos_out : out STD_LOGIC;
     vccaux_alarm_out : out STD_LOGIC;
@@ -38,13 +44,11 @@ entity joystick_adc is
 end joystick_adc;
 
 architecture STRUCTURE of joystick_adc is
-  signal NLW_inst_DRDY_UNCONNECTED : STD_LOGIC;
   signal NLW_inst_JTAGBUSY_UNCONNECTED : STD_LOGIC;
   signal NLW_inst_JTAGLOCKED_UNCONNECTED : STD_LOGIC;
   signal NLW_inst_JTAGMODIFIED_UNCONNECTED : STD_LOGIC;
   signal NLW_inst_OT_UNCONNECTED : STD_LOGIC;
   signal NLW_inst_ALM_UNCONNECTED : STD_LOGIC_VECTOR ( 6 downto 3 );
-  signal NLW_inst_DO_UNCONNECTED : STD_LOGIC_VECTOR ( 15 downto 0 );
   signal NLW_inst_MUXADDR_UNCONNECTED : STD_LOGIC_VECTOR ( 4 downto 0 );
   attribute BOX_TYPE : string;
   attribute BOX_TYPE of inst : label is "PRIMITIVE";
@@ -52,15 +56,15 @@ begin
 inst: unisim.vcomponents.XADC
     generic map(
       INIT_40 => X"0000",
-      INIT_41 => X"21A1",
-      INIT_42 => X"0400",
+      INIT_41 => X"4101",
+      INIT_42 => X"0200",
       INIT_43 => X"0000",
       INIT_44 => X"0000",
       INIT_45 => X"0000",
       INIT_46 => X"0000",
       INIT_47 => X"0000",
       INIT_48 => X"0800",
-      INIT_49 => X"00C0",
+      INIT_49 => X"0040",
       INIT_4A => X"0000",
       INIT_4B => X"0000",
       INIT_4C => X"0000",
@@ -98,13 +102,13 @@ inst: unisim.vcomponents.XADC
       CHANNEL(4 downto 0) => channel_out(4 downto 0),
       CONVST => '0',
       CONVSTCLK => '0',
-      DADDR(6 downto 0) => B"0000000",
+      DADDR(6 downto 0) => daddr_in(6 downto 0),
       DCLK => dclk_in,
-      DEN => '0',
-      DI(15 downto 0) => B"0000000000000000",
-      DO(15 downto 0) => NLW_inst_DO_UNCONNECTED(15 downto 0),
-      DRDY => NLW_inst_DRDY_UNCONNECTED,
-      DWE => '0',
+      DEN => den_in,
+      DI(15 downto 0) => di_in(15 downto 0),
+      DO(15 downto 0) => do_out(15 downto 0),
+      DRDY => drdy_out,
+      DWE => dwe_in,
       EOC => eoc_out,
       EOS => eos_out,
       JTAGBUSY => NLW_inst_JTAGBUSY_UNCONNECTED,
@@ -113,12 +117,14 @@ inst: unisim.vcomponents.XADC
       MUXADDR(4 downto 0) => NLW_inst_MUXADDR_UNCONNECTED(4 downto 0),
       OT => NLW_inst_OT_UNCONNECTED,
       RESET => reset_in,
-      VAUXN(15 downto 8) => B"00000000",
-      VAUXN(7) => vauxn7,
+      VAUXN(15) => '0',
+      VAUXN(14) => vauxn14,
+      VAUXN(13 downto 7) => B"0000000",
       VAUXN(6) => vauxn6,
       VAUXN(5 downto 0) => B"000000",
-      VAUXP(15 downto 8) => B"00000000",
-      VAUXP(7) => vauxp7,
+      VAUXP(15) => '0',
+      VAUXP(14) => vauxp14,
+      VAUXP(13 downto 7) => B"0000000",
       VAUXP(6) => vauxp6,
       VAUXP(5 downto 0) => B"000000",
       VN => vn_in,

@@ -2,7 +2,7 @@
 -- Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
--- Date        : Fri Dec  6 22:38:52 2024
+-- Date        : Sun Dec  8 09:43:44 2024
 -- Host        : t14s running 64-bit Arch Linux
 -- Command     : write_vhdl -force -mode synth_stub /home/b83c/fpga/vga/ips/rgb_stack/rgb_stack_stub.vhdl
 -- Design      : rgb_stack
@@ -18,11 +18,11 @@ entity rgb_stack is
     ena : in STD_LOGIC;
     wea : in STD_LOGIC_VECTOR ( 0 to 0 );
     addra : in STD_LOGIC_VECTOR ( 8 downto 0 );
-    dina : in STD_LOGIC_VECTOR ( 511 downto 0 );
+    dina : in STD_LOGIC_VECTOR ( 767 downto 0 );
     clkb : in STD_LOGIC;
     enb : in STD_LOGIC;
     addrb : in STD_LOGIC_VECTOR ( 8 downto 0 );
-    doutb : out STD_LOGIC_VECTOR ( 511 downto 0 )
+    doutb : out STD_LOGIC_VECTOR ( 767 downto 0 )
   );
 
 end rgb_stack;
@@ -31,7 +31,7 @@ architecture stub of rgb_stack is
 attribute syn_black_box : boolean;
 attribute black_box_pad_pin : string;
 attribute syn_black_box of stub : architecture is true;
-attribute black_box_pad_pin of stub : architecture is "clka,ena,wea[0:0],addra[8:0],dina[511:0],clkb,enb,addrb[8:0],doutb[511:0]";
+attribute black_box_pad_pin of stub : architecture is "clka,ena,wea[0:0],addra[8:0],dina[767:0],clkb,enb,addrb[8:0],doutb[767:0]";
 attribute x_core_info : string;
 attribute x_core_info of stub : architecture is "blk_mem_gen_v8_4_8,Vivado 2024.1";
 begin

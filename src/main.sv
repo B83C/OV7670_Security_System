@@ -9,6 +9,8 @@ module main #(
     input [7:0] JB,
     output reg [3:0] r, g, b,
     inout reg [7:0] JC,
+    input analogp[1:0],
+    input analogn[1:0],
     output reg [1:0] servo,
     input [4:0] btn,
     output reg [7:0] led,
@@ -46,6 +48,47 @@ module main #(
         end
     end
 
+    logic [6:0] drp_addr = 8'h16;
+    logic vp_in, vn_in;
+    wire [15:0] data;
+    logic [7:0] x_data;
+    logic [7:0] y_data;
+    logic enable, ready;
+
+    always @(negedge clk_25) begin
+        if(ready) begin
+            if(drp_addr == 8'h16) begin
+                drp_addr <=  8'h1e;
+                x_data <= data[15:8];
+            end else begin
+                drp_addr <=  8'h16;
+                y_data <= data[15:8];
+            end
+        	
+        end
+    end
+
+    joystick_adc adc(
+        .daddr_in(drp_addr), 
+        .dclk_in(clk_25), 
+        .den_in(enable), 
+        .di_in(0), 
+        .dwe_in(0), 
+        .busy_out(),                    
+        .vauxp6(analogp[0]),
+        .vauxn6(analogn[0]),
+        .vauxp14(analogp[1]),
+        .vauxn14(analogn[1]),
+        .vn_in(vn_in), 
+        .vp_in(vp_in), 
+        .alarm_out(), 
+        .do_out(data), 
+        //.reset_in(),
+        .eoc_out(enable),
+        .channel_out(),
+        .drdy_out(ready)
+    );
+
     generate
         for(i = 0; i < 2; i++) begin
             pwm_servo m0 (.clk(clk_25), .en(1), .cntr(pwm_cntr), .deg(servo_deg[i]), .signal(servo[i]));
@@ -73,13 +116,15 @@ module main #(
         if(buttons[1]) begin
             nss <= 1;
         end
-        if(btn[2]) begin
-            servo_deg[0] <= servo_deg[0] + 1;
-            servo_deg[1] <= servo_deg[1] + 1;
+        if (x_data < 8'h22 && servo_deg[0] >= 3) begin
+        	servo_deg[1] <= servo_deg[1] - (x_data / (8'h22 / 3)) + 2;
+        end else if (x_data > 8'h29 && servo_deg[1] < 200) begin
+        	servo_deg[1] <= servo_deg[1] + ((x_data - 8'h29) / ((8'hF9 - 8'h29)/3));
         end
-        if(btn[3]) begin
-            servo_deg[0] <= servo_deg[0] - 1;
-            servo_deg[1] <= servo_deg[1] - 1;
+        if (y_data < 8'h22 && servo_deg[1] >= 3) begin
+        	servo_deg[0] <= servo_deg[0] - y_data / (8'h22 / 3) + 2;
+        end else if (y_data > 8'h29 && servo_deg[0] < 200) begin
+        	servo_deg[0] <= servo_deg[0] + ((y_data - 8'h29) / ((8'hF9 - 8'h29)/3));
         end
     end
 
@@ -115,9 +160,7 @@ module main #(
     logic [$clog2(96)- 1:0] character_addr;
     wire [$clog2(96)- 1:0] ascii_addr;
     assign ascii_addr = character_addr < 32? 0: character_addr - 32; //Address space compression
-    wire [C_W*C_H - 1: 0] char_buf;
-    wire char_pix [C_H - 1 : 0][C_W - 1 : 0];
-    assign char_pix = {>>{char_buf}};
+    wire [C_H - 1 : 0][C_W - 1 : 0] char_buf;
     rom #(.WIDTH(C_W*C_H), .DEPTH(96), .binaryFile("ascii.rom"), .RISING_EDGE(0)) ascii (.addr(ascii_addr), .data(char_buf), .clk(clk_108));
 
     logic enable_buffer_a;
@@ -129,37 +172,47 @@ module main #(
 
     logic enb = 0;
     logic [$clog2(480) - 1:0] addrb = 0;
-    logic [320- 1:0][7:0] rcfb = 0;
-    logic [64 - 1: 0][11:0] rrgbs = 0;
+    logic [320- 1:0][7:0] rcfb;
+    logic [64 - 1: 0][11:0] rrgbs;
 
     logic rst_dec = 1;
-    wire [$clog2(64) - 1:0] dec_stack_ind;
-    wire [$clog2(320) - 1:0] dec_stream_ind;
-    wire [12 - 1:0] dec_rgb;
-    wire dec_done;
+    // logic [$clog2(64) - 1:0] dec_stack_ind;
+    // logic [$clog2(320) - 1:0] dec_stream_ind;
+    (* keep = "true" *) logic [12 - 1:0] dec_rgb;
+    (* keep = "true" *) wire dec_done;
 
     wire [$clog2(1280):0] x;
     wire [$clog2(1024):0] y;
     wire vga_active;
+    (* keep = "true" *) logic dec_en;
 
-    enc_buff fb (.clka(clk_25), .ena(enable_buffer_a), .wea(write_to_buffer), .addra(addra), .dina(wcfb), .clkb(clk_108), .enb(enb), .addrb(addrb), .doutb(rcfb));
+    wire camera_state cam_state;
+    wire pclk, href, vref;
+    assign href = JC[2];
+    assign vref = JC[6];
 
-    rgb_stack rgbstack (.clka(clk_25), .ena(enable_buffer_a), .wea(write_to_buffer), .addra(addra), .dina(wrgbs), .clkb(clk_108), .enb(enb), .addrb(addrb), .doutb(rrgbs));
+    enc_buff fb (.clka(pclk), .ena(enable_buffer_a), .wea(write_to_buffer), .addra(addra), .dina(wcfb), .clkb(clk_108), .enb(enb), .addrb(addrb), .doutb(rcfb));
 
-    qoi_rgb444_decoder dec (
+    rgb_stack rgbstack (.clka(pclk), .ena(enable_buffer_a), .wea(write_to_buffer), .addra(addra), .dina(wrgbs), .clkb(clk_108), .enb(enb), .addrb(addrb), .doutb(rrgbs));
+
+    qoi_rgb444_decoder dd (
         .clk(clk_108),
-        .en(vga_active && x < 640 && y < 480),
+        .en(dec_en),
         .rst_n(rst_dec),
-        .rgbstack(rrgbs[dec_stack_ind]),
-        .input_stream({rcfb[dec_stream_ind], rcfb[dec_stream_ind + 1]}),
+        .rgbstack(rrgbs),
+        .input_stream(rcfb),
         .rgb(dec_rgb),
-        .stack_ind(dec_stack_ind),
-        .stream_ind(dec_stream_ind),
         .done(dec_done)
     );
 
     vga_ctrl vga_c (.pclk(clk_108), .x(x), .y(y), .hsync(hsync), .vsync(vsync), .active(vga_active));
 
+    always @(negedge clk_25) begin
+        text_buffer[4][41+14 +:2] <= { <<8{hex(x_data[7:4]), hex(x_data[3:0])}};
+        text_buffer[5][41+14 +:2] <= { <<8{hex(y_data[7:4]), hex(y_data[3:0])}};
+    end
+
+    assign dec_en = vga_active && x < 640 && y < 480;
     always @(posedge clk_108) begin
         {r,g,b} <= 12'b0;
         rst_dec <= 1;
@@ -197,17 +250,16 @@ module main #(
                         end
                     end 
                 end
-                {r,g,b} <= {12{char_pix[y_cntr][x_cntr]}};
+                {r,g,b} <= {12{char_buf[y_cntr][x_cntr]}};
             end             
             if (x < 640 && y < 480) begin
-                // if (x[1:0] == 2'b11) begin
-                //     addrb <= addrb + 1;
-                // end
+                if (x == 640 - 1) begin
+                    addrb <= addrb + 1;
+                end
                 {r,g,b} <= dec_rgb;
             end else if (x >= 640 && y < 480) begin
                 rst_dec <= 0;
                 if (x == 640) begin
-                    addrb <= addrb + 1;
                     enb <= 1;
                 end
             end else if(y >= 480) begin
@@ -216,10 +268,6 @@ module main #(
         end        
     end
 
-    wire camera_state cam_state;
-    wire pclk, href, vref;
-    assign href = JC[2];
-    assign vref = JC[6];
 
     wire [7:0] D;
 
@@ -252,7 +300,7 @@ module main #(
     logic pixel_half = 0;
     logic [1:0] counter = 0;
 
-    logic [11:0] crgb;
+    logic [11:0] crgb, p_crgb = 0;
     logic enc_en = 0;
     logic enc_rst_n = 1;
 
@@ -278,23 +326,6 @@ module main #(
                     addra <= 0;
                     pixel_half <= 0;
                     enc_rst_n <= 0;
-                    led[0] <= ~led[0];
-                    // frame_acc_cntr <= frame_acc_cntr + 1;
-                    // text_buffer[3][41+14 +:3] <= { <<8{hex({2'b0, ind_c[9:8]}), hex(ind_c[7:4]), hex(ind_c[3:0])}};
-                    // text_buffer[4][41+14 +:2] <= { <<8{hex({3'b0, sind_c[4]}), hex(sind_c[3:0])}};
-                    // if(frame_acc_cntr == 480 - 1) begin
-                        // frame_acc_cntr <= 0;
-                        // acc_cntr <= acc_cntr + 1;
-                        // if(acc_cntr == 0) begin
-                    // ind_avg <= 0;
-                    // sind_avg <= 0;
-                    // ind_c <= 0;
-                    // sind_c <= 0;
-                        // end else begin
-                        //     ind_avg <=  $clog2(640)'(ind_avg + ((ind_c/480) - ind_avg)/(acc_cntr + 1));
-                        //     sind_avg <=  $clog2(64)'( sind_avg + ((sind_c/480) - sind_avg)/(acc_cntr + 1));
-                        // end
-                    // end                
                 end
             end
             ROW_CAPTURE: begin
@@ -303,38 +334,23 @@ module main #(
                     pixel_half <= ~pixel_half;
                     if (!pixel_half) begin
                         crgb[11:4] <= D;
-                        // counter <= counter + 1;
-                        // if(counter == 2'b11) begin
-                        //     // addra <= addra + 1;
-                        // end
                         enc_en <= 0;
                     end else begin
                         crgb[3:0] <= D[7:4];
+                        p_crgb <= crgb;
                         wea <= 1;
                         enc_en <= 1;
-                        // dbg_cntr <= dbg_cntr + 1;
                     end
                 end else begin
-                    // counter <= 0;
                     enc_en <= 0;
-                    enc_rst_n <= 0;
-                    write_to_buffer <= 1;
-                    // if (dbg_cntr == 640) begin //Test
-                    //     if (enc_ind > ind_c) ind_c <= enc_ind;
-                    //     if (enc_sind > sind_c) sind_c <= enc_sind;
-                    //     // ind_c <= ind_c + enc_ind;
-                    //     // sind_c <= sind_c + enc_sind;
-                    // end
-                end
-                if (vref) begin
-                    if(buttons[3]) begin
-                        // ind_c <= 0;
-                        // sind_c <= 0;
-                        // ind_avg <=  ind_c;
-                        // sind_avg <=  sind_c;
-                        // ind_avg <=  ind_c / 480;
-                        // sind_avg <=  sind_c / 480;
-                    end                
+                    crgb <= 0;
+                    p_crgb <= 0;
+                    if (enc_en) begin
+                        addra <= addra + 1;
+                        write_to_buffer <= 1;
+                    end else if (!enc_en && write_to_buffer == 0) begin
+                        enc_rst_n <= 0;
+                    end
                 end
             end
             STOP: begin
@@ -350,5 +366,12 @@ module main #(
         text_buffer[4][41+:14] = { <<8{"Avg stack cnt:"}};
     end
 
+    wire trig_ack;
+
+    // ila_0 dbg (.clk(pclk), .probe0(enc_rst_n),
+    //     .probe1(crgb),
+    //     .probe2(wcfb[0][7:0]),
+    //     .probe3(enc_en)
+    // );
     // assign JC = {1'b0, 1'b0, hsync, vsync};
 endmodule

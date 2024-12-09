@@ -21,31 +21,19 @@ logic [5:0] stack_ind;
 assign rgbstack = stack;
 
 logic [11:0] last_rgb;
-wire [14:0] drgb;
-
-assign drgb[14:10] = last_rgb[11:8] - rgb[11:8] + 2;
-assign drgb[9:5] = last_rgb[7:4] - rgb[7:4] + 2;
-assign drgb[4:0] = last_rgb[3:0] - rgb[3:0] + 2;
 
 logic [5:0] rcntr;
 
 wire [3:0] r,g,b;
+wire [4:0] dr,dg,db;
 
 assign r = rgb[11:8];
 assign g = rgb[7:4];
 assign b = rgb[3:0];
 
-// always_latch begin
-//     if (!rst_n) begin
-//         stack_ind = 0;
-//     end else
-//     if (en) begin
-//         // stack_ind = r * 3 + g * 5 + b * 7;
-//     end
-//     else begin
-//         stack_ind = stack_ind;
-//     end 
-// end
+assign dr = last_rgb[11:8] - rgb[11:8] + 2;
+assign dg = last_rgb[7:4] - rgb[7:4] + 2;
+assign db = last_rgb[3:0] - rgb[3:0] + 2;
 
 always @(posedge clk) begin
     if (!rst_n) begin
@@ -64,7 +52,8 @@ always @(posedge clk) begin
         end
         last_rgb <= rgb;
         rcntr <= 1;
-        if (last_rgb == rgb) begin
+        if (last_rgb == rgb || (dr + dg + db) <= 1) begin
+            last_rgb <= last_rgb;
             if (rcntr > 1) begin
                 stream_ind <= stream_ind;
                 stream[stream_ind - 1 == 0? 0:stream_ind - 1] <= {2'b11, rcntr};
@@ -76,8 +65,8 @@ always @(posedge clk) begin
             end        
         end else if (stack[hashmap[rgb]] == rgb) begin
             stream[stream_ind] <= {2'b00, hashmap[rgb]};
-        end else if ({drgb[14:12], drgb[9:7], drgb[4:2]} == 9'd0) begin
-            stream[stream_ind] <= {2'b01, drgb[11:10], drgb[6:5], drgb[1:0]};
+        end else if ({dr[4:2], dg[4:2], db[4:2]} == 9'd0) begin
+            stream[stream_ind] <= {2'b01, dr[1:0], dg[1:0], db[1:0]};
         end else if (stack[hashmap[rgb]] != rgb && stack_ind < 6'(64 - 1) ) begin
             stream[stream_ind] <= {2'b00, stack_ind};
             stack_ind <= stack_ind + 1;

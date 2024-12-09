@@ -2,9 +2,9 @@
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
-// Date        : Sun Nov 24 22:44:30 2024
+// Date        : Mon Dec  9 16:21:21 2024
 // Host        : t14s running 64-bit Arch Linux
-// Command     : write_verilog -force -mode funcsim /home/b83c/fpga/vga/src/ips/joystick_adc/joystick_adc_sim_netlist.v
+// Command     : write_verilog -force -mode funcsim /home/b83c/fpga/vga/ips/joystick_adc/joystick_adc_sim_netlist.v
 // Design      : joystick_adc
 // Purpose     : This verilog netlist is a functional simulation representation of the design and should not be modified
 //               or synthesized. This netlist cannot be used for SDF annotated simulation.
@@ -14,14 +14,20 @@
 
 (* NotValidForBitStream *)
 module joystick_adc
-   (dclk_in,
+   (daddr_in,
+    dclk_in,
+    den_in,
+    di_in,
+    dwe_in,
     reset_in,
     vauxp6,
     vauxn6,
-    vauxp7,
-    vauxn7,
+    vauxp14,
+    vauxn14,
     busy_out,
     channel_out,
+    do_out,
+    drdy_out,
     eoc_out,
     eos_out,
     vccaux_alarm_out,
@@ -30,14 +36,20 @@ module joystick_adc
     alarm_out,
     vp_in,
     vn_in);
+  input [6:0]daddr_in;
   input dclk_in;
+  input den_in;
+  input [15:0]di_in;
+  input dwe_in;
   input reset_in;
   input vauxp6;
   input vauxn6;
-  input vauxp7;
-  input vauxn7;
+  input vauxp14;
+  input vauxn14;
   output busy_out;
   output [4:0]channel_out;
+  output [15:0]do_out;
+  output drdy_out;
   output eoc_out;
   output eos_out;
   output vccaux_alarm_out;
@@ -50,40 +62,44 @@ module joystick_adc
   wire alarm_out;
   wire busy_out;
   wire [4:0]channel_out;
+  wire [6:0]daddr_in;
   wire dclk_in;
+  wire den_in;
+  wire [15:0]di_in;
+  wire [15:0]do_out;
+  wire drdy_out;
+  wire dwe_in;
   wire eoc_out;
   wire eos_out;
   wire reset_in;
   wire user_temp_alarm_out;
+  wire vauxn14;
   wire vauxn6;
-  wire vauxn7;
+  wire vauxp14;
   wire vauxp6;
-  wire vauxp7;
   wire vccaux_alarm_out;
   wire vccint_alarm_out;
   wire vn_in;
   wire vp_in;
-  wire NLW_inst_DRDY_UNCONNECTED;
   wire NLW_inst_JTAGBUSY_UNCONNECTED;
   wire NLW_inst_JTAGLOCKED_UNCONNECTED;
   wire NLW_inst_JTAGMODIFIED_UNCONNECTED;
   wire NLW_inst_OT_UNCONNECTED;
   wire [6:3]NLW_inst_ALM_UNCONNECTED;
-  wire [15:0]NLW_inst_DO_UNCONNECTED;
   wire [4:0]NLW_inst_MUXADDR_UNCONNECTED;
 
   (* BOX_TYPE = "PRIMITIVE" *) 
   XADC #(
     .INIT_40(16'h0000),
-    .INIT_41(16'h21A1),
-    .INIT_42(16'h0400),
+    .INIT_41(16'h4101),
+    .INIT_42(16'h0200),
     .INIT_43(16'h0000),
     .INIT_44(16'h0000),
     .INIT_45(16'h0000),
     .INIT_46(16'h0000),
     .INIT_47(16'h0000),
     .INIT_48(16'h0800),
-    .INIT_49(16'h00C0),
+    .INIT_49(16'h0040),
     .INIT_4A(16'h0000),
     .INIT_4B(16'h0000),
     .INIT_4C(16'h0000),
@@ -116,13 +132,13 @@ module joystick_adc
         .CHANNEL(channel_out),
         .CONVST(1'b0),
         .CONVSTCLK(1'b0),
-        .DADDR({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}),
+        .DADDR(daddr_in),
         .DCLK(dclk_in),
-        .DEN(1'b0),
-        .DI({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}),
-        .DO(NLW_inst_DO_UNCONNECTED[15:0]),
-        .DRDY(NLW_inst_DRDY_UNCONNECTED),
-        .DWE(1'b0),
+        .DEN(den_in),
+        .DI(di_in),
+        .DO(do_out),
+        .DRDY(drdy_out),
+        .DWE(dwe_in),
         .EOC(eoc_out),
         .EOS(eos_out),
         .JTAGBUSY(NLW_inst_JTAGBUSY_UNCONNECTED),
@@ -131,8 +147,8 @@ module joystick_adc
         .MUXADDR(NLW_inst_MUXADDR_UNCONNECTED[4:0]),
         .OT(NLW_inst_OT_UNCONNECTED),
         .RESET(reset_in),
-        .VAUXN({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,vauxn7,vauxn6,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}),
-        .VAUXP({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,vauxp7,vauxp6,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}),
+        .VAUXN({1'b0,vauxn14,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,vauxn6,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}),
+        .VAUXP({1'b0,vauxp14,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,vauxp6,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}),
         .VN(vn_in),
         .VP(vp_in));
 endmodule

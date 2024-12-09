@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GenRun Id="joystick_adc_synth_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1732459426">
+<GenRun Id="joystick_adc_synth_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1733732439">
+  <File Type="VDS-TIMINGSUMMARY" Name="joystick_adc_timing_summary_synth.rpt"/>
   <File Type="RDS-DCP" Name="joystick_adc.dcp"/>
   <File Type="RDS-UTIL-PB" Name="joystick_adc_utilization_synth.pb"/>
-  <File Type="PA-TCL" Name="joystick_adc.tcl"/>
   <File Type="RDS-UTIL" Name="joystick_adc_utilization_synth.rpt"/>
-  <File Type="REPORTS-TCL" Name="joystick_adc_reports.tcl"/>
+  <File Type="RDS-PROPCONSTRS" Name="joystick_adc_drc_synth.rpt"/>
   <File Type="RDS-RDS" Name="joystick_adc.vds"/>
+  <File Type="REPORTS-TCL" Name="joystick_adc_reports.tcl"/>
+  <File Type="VDS-TIMING-PB" Name="joystick_adc_timing_summary_synth.pb"/>
+  <File Type="PA-TCL" Name="joystick_adc.tcl"/>
   <FileSet Name="sources" Type="BlockSrcs" RelSrcDir="$PSRCDIR/joystick_adc" RelGenDir="$PGENDIR/joystick_adc">
     <File Path="$PPRDIR/../joystick_adc/joystick_adc.xci">
       <FileInfo>

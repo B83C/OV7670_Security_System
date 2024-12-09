@@ -21,7 +21,7 @@ else
 fi
 export LD_LIBRARY_PATH
 
-HD_PWD='/home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/joystick_adc_synth_1'
+HD_PWD='/home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/joystick_adc_synth_1'
 cd "$HD_PWD"
 
 HD_LOG=runme.log
