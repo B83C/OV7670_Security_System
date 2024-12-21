@@ -4,7 +4,7 @@
 
 set TIME_start [clock seconds] 
 namespace eval ::optrace {
-  variable script "/home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm.tcl"
+  variable script "/home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm.tcl"
   variable category "vivado_synth"
 }
 
@@ -56,6 +56,11 @@ if {$::dispatch::connected} {
 }
 
 OPTRACE "clk_mcmm_synth_1" START { ROLLUP_AUTO }
+set_param checkpoint.writeSynthRtdsInDcp 1
+set_param general.maxThreads 16
+set_msg_config -id {Common 17-41} -limit 10000000
+set_msg_config -id {Synth 8-256} -limit 10000
+set_msg_config -id {Synth 8-638} -limit 10000
 set_param project.vivado.isBlockSynthRun true
 set_msg_config -msgmgr_mode ooc_run
 OPTRACE "Creating in-memory project" START { }
@@ -65,19 +70,19 @@ set_param project.singleFileAddWarning.threshold 0
 set_param project.compositeFile.enableAutoGeneration 0
 set_param synth.vivado.isSynthRun true
 set_msg_config -source 4 -id {IP_Flow 19-2162} -severity warning -new_severity info
-set_property webtalk.parent_dir /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.cache/wt [current_project]
-set_property parent.project_path /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.xpr [current_project]
-set_property XPM_LIBRARIES XPM_CDC [current_project]
+set_property webtalk.parent_dir /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.cache/wt [current_project]
+set_property parent.project_path /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.xpr [current_project]
+set_property XPM_LIBRARIES {XPM_CDC XPM_MEMORY} [current_project]
 set_property default_lib xil_defaultlib [current_project]
 set_property target_language Verilog [current_project]
-set_property ip_output_repo /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.cache/ip [current_project]
+set_property ip_output_repo /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.cache/ip [current_project]
 set_property ip_cache_permissions {read write} [current_project]
 OPTRACE "Creating in-memory project" END { }
 OPTRACE "Adding files" START { }
-read_ip -quiet /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm.xci
-set_property used_in_implementation false [get_files -all /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_board.xdc]
-set_property used_in_implementation false [get_files -all /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm.xdc]
-set_property used_in_implementation false [get_files -all /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_ooc.xdc]
+read_ip -quiet /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm.xci
+set_property used_in_implementation false [get_files -all /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_board.xdc]
+set_property used_in_implementation false [get_files -all /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm.xdc]
+set_property used_in_implementation false [get_files -all /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_ooc.xdc]
 
 OPTRACE "Adding files" END { }
 # Mark all dcp files as not used in implementation to prevent them from being
@@ -93,7 +98,7 @@ set_property used_in_implementation false [get_files dont_touch.xdc]
 set_param ips.enableIPCacheLiteLoad 1
 OPTRACE "Configure IP Cache" START { }
 
-set cacheID [config_ip_cache -export -no_bom  -dir /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1 -new_name clk_mcmm -ip [get_ips clk_mcmm]]
+set cacheID [config_ip_cache -export -no_bom  -dir /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1 -new_name clk_mcmm -ip [get_ips clk_mcmm]]
 
 OPTRACE "Configure IP Cache" END { }
 if { $cacheID == "" } {
@@ -148,32 +153,32 @@ generate_parallel_reports -reports { "report_utilization -file clk_mcmm_utilizat
 OPTRACE "synth reports" END { }
 
 if { [catch {
-  file copy -force /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm.dcp /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm.dcp
+  file copy -force /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm.dcp /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm.dcp
 } _RESULT ] } { 
   send_msg_id runtcl-3 status "ERROR: Unable to successfully create or copy the sub-design checkpoint file."
   error "ERROR: Unable to successfully create or copy the sub-design checkpoint file."
 }
 
 if { [catch {
-  write_verilog -force -mode synth_stub /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_stub.v
+  write_verilog -force -mode synth_stub /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_stub.v
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create a Verilog synthesis stub for the sub-design. This may lead to errors in top level synthesis of the design. Error reported: $_RESULT"
 }
 
 if { [catch {
-  write_vhdl -force -mode synth_stub /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_stub.vhdl
+  write_vhdl -force -mode synth_stub /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_stub.vhdl
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create a VHDL synthesis stub for the sub-design. This may lead to errors in top level synthesis of the design. Error reported: $_RESULT"
 }
 
 if { [catch {
-  write_verilog -force -mode funcsim /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_sim_netlist.v
+  write_verilog -force -mode funcsim /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_sim_netlist.v
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create the Verilog functional simulation sub-design file. Post-Synthesis Functional Simulation with this file may not be possible or may give incorrect results. Error reported: $_RESULT"
 }
 
 if { [catch {
-  write_vhdl -force -mode funcsim /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_sim_netlist.vhdl
+  write_vhdl -force -mode funcsim /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_sim_netlist.vhdl
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create the VHDL functional simulation sub-design file. Post-Synthesis Functional Simulation with this file may not be possible or may give incorrect results. Error reported: $_RESULT"
 }
@@ -183,32 +188,32 @@ if { [catch {
 
 
 if { [catch {
-  file copy -force /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm.dcp /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm.dcp
+  file copy -force /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm.dcp /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm.dcp
 } _RESULT ] } { 
   send_msg_id runtcl-3 status "ERROR: Unable to successfully create or copy the sub-design checkpoint file."
   error "ERROR: Unable to successfully create or copy the sub-design checkpoint file."
 }
 
 if { [catch {
-  file rename -force /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_stub.v /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_stub.v
+  file rename -force /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_stub.v /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_stub.v
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create a Verilog synthesis stub for the sub-design. This may lead to errors in top level synthesis of the design. Error reported: $_RESULT"
 }
 
 if { [catch {
-  file rename -force /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_stub.vhdl /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_stub.vhdl
+  file rename -force /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_stub.vhdl /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_stub.vhdl
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create a VHDL synthesis stub for the sub-design. This may lead to errors in top level synthesis of the design. Error reported: $_RESULT"
 }
 
 if { [catch {
-  file rename -force /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_sim_netlist.v /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_sim_netlist.v
+  file rename -force /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_sim_netlist.v /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_sim_netlist.v
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create the Verilog functional simulation sub-design file. Post-Synthesis Functional Simulation with this file may not be possible or may give incorrect results. Error reported: $_RESULT"
 }
 
 if { [catch {
-  file rename -force /home/b83c/fpga/vga/src/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_sim_netlist.vhdl /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_sim_netlist.vhdl
+  file rename -force /home/b83c/fpga/vga/ips/managed_ip_project/managed_ip_project.runs/clk_mcmm_synth_1/clk_mcmm_sim_netlist.vhdl /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_sim_netlist.vhdl
 } _RESULT ] } { 
   puts "CRITICAL WARNING: Unable to successfully create the VHDL functional simulation sub-design file. Post-Synthesis Functional Simulation with this file may not be possible or may give incorrect results. Error reported: $_RESULT"
 }
@@ -216,15 +221,15 @@ if { [catch {
 close [open .end.used_ip_cache.rst w]
 }; # end if cacheID 
 
-if {[file isdir /home/b83c/fpga/vga/src/ips/ip_user_files/ip/clk_mcmm]} {
+if {[file isdir /home/b83c/fpga/vga/ips/ip_user_files/ip/clk_mcmm]} {
   catch { 
-    file copy -force /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_stub.v /home/b83c/fpga/vga/src/ips/ip_user_files/ip/clk_mcmm
+    file copy -force /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_stub.v /home/b83c/fpga/vga/ips/ip_user_files/ip/clk_mcmm
   }
 }
 
-if {[file isdir /home/b83c/fpga/vga/src/ips/ip_user_files/ip/clk_mcmm]} {
+if {[file isdir /home/b83c/fpga/vga/ips/ip_user_files/ip/clk_mcmm]} {
   catch { 
-    file copy -force /home/b83c/fpga/vga/src/ips/clk_mcmm/clk_mcmm_stub.vhdl /home/b83c/fpga/vga/src/ips/ip_user_files/ip/clk_mcmm
+    file copy -force /home/b83c/fpga/vga/ips/clk_mcmm/clk_mcmm_stub.vhdl /home/b83c/fpga/vga/ips/ip_user_files/ip/clk_mcmm
   }
 }
 file delete __synthesis_is_running__

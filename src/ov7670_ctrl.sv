@@ -2,9 +2,6 @@
 
 `include "defs.svh"
 
-//TODO Adding error checker
-// 
-
 module ov7670_ctrl #(
   parameter I2C_SCL_FREQ = 100_000,
   parameter I2C_CLK_FREQ = 100_000_000

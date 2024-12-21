@@ -1,26 +1,6 @@
 `timescale 1ns/1ps
 
 `include "defs.svh"
-// import defs::*;
-
-  // typedef enum logic[2:0]
-  // {
-  //   IDLE = 0,
-  //   START = 1,
-  //   WRITE = 2,
-  //   CHECK_ACK = 3,
-  //   READ = 4,
-  //   SEND_ACK = 5,
-  //   STOP = 6,
-  //   STOP_EXIT = 7
-  // } i2c_state_t;
-
-  // typedef enum logic [1:0] {
-  //   WRITE_DEV_ADDR = 0,
-  //   WRITE_REG_ADDR = 1,
-  //   WRITE_REG_DATA = 2,
-  //   READ_REG_DATA = 3
-  // } data_i2c_state_t;
 
 module i2c_m  #(
   parameter SCL_FREQ = 100_000,

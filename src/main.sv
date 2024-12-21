@@ -1,4 +1,3 @@
-// %include ips/c
 `include "defs.svh"
 
 `timescale 1ns/1ps
@@ -8,7 +7,7 @@ module main #(
     input clk,
     input [7:0] JB,
     output reg [3:0] r, g, b,
-    inout reg [7:0] JC,
+    inout logic [7:0] JC,
     input analogp[1:0],
     input analogn[1:0],
     output reg [1:0] servo,
@@ -53,7 +52,14 @@ module main #(
     wire [15:0] data;
     logic [7:0] x_data;
     logic [7:0] y_data;
+    logic [7:0] x_data_display0, x_data_display1;
+    logic [7:0] y_data_display0, y_data_display1;
     logic enable, ready;
+
+    always @(posedge clk_108) begin
+        {x_data_display0, y_data_display0} <= {x_data, y_data};
+        {x_data_display1, y_data_display1} <= {x_data_display0, y_data_display0};
+    end
 
     always @(negedge clk_25) begin
         if(ready) begin
@@ -95,36 +101,56 @@ module main #(
         end
     endgenerate
 
-    byte test = 0;
-    logic ss = 0, nss = 0;
-    always @(posedge clk) begin
+    typedef enum {
+        NONE = 0,
+        NIGHT_MODE,
+        FLIP
+    } CMD_STATE;
+
+    logic night_mode = 0;
+    logic flip = 0;
+    CMD_STATE ss = NONE, nss = NONE;
+    always @(posedge clk_108) begin
         clk_cnt <= clk_cnt + 1;
         cmd.send <= 0;
         ss <= nss;
-        if (!ss && nss) begin
-            cmd.command <= {8'h00, test};
-            test <= test + 1;
-            cmd.send <= 1;
+        if (ss == NONE && nss != NONE) begin
+            case (nss) 
+                NIGHT_MODE: begin
+                    night_mode <= ~night_mode;
+                    cmd.command <= {8'h3b, {{night_mode}, 7'd0}};
+                    cmd.send <= 1;
+                end
+                FLIP: begin
+                    flip <= ~flip ;
+                    cmd.command <= {8'h1e, {3'd0, {flip}, 4'd0}};
+                    cmd.send <= 1;
+                end
+                default : begin
+                	
+                end
+            endcase
         end
     end
 
     always @(posedge div_clk) begin
-        nss <= 0;
+        nss <= NONE;
         if(buttons[0]) begin
             capture <= ~capture;
-        end 
-        if(buttons[1]) begin
-            nss <= 1;
+        end else if(buttons[1]) begin
+            nss <= NIGHT_MODE;
+        end else if(buttons[2]) begin
+            nss <= FLIP;
         end
-        if (x_data < 8'h22 && servo_deg[0] >= 3) begin
-        	servo_deg[1] <= servo_deg[1] - (x_data / (8'h22 / 3)) + 2;
+        if (x_data < 8'h22 && servo_deg[1] >= 3) begin
+        	servo_deg[1] <= servo_deg[1] + (x_data / 16) - 2;
         end else if (x_data > 8'h29 && servo_deg[1] < 200) begin
-        	servo_deg[1] <= servo_deg[1] + ((x_data - 8'h29) / ((8'hF9 - 8'h29)/3));
+        	servo_deg[1] <= servo_deg[1] + ((x_data - 8'h29) / 64);
         end
-        if (y_data < 8'h22 && servo_deg[1] >= 3) begin
-        	servo_deg[0] <= servo_deg[0] - y_data / (8'h22 / 3) + 2;
+        if (y_data < 8'h22 && servo_deg[0] >= 3) begin
+        	servo_deg[0] <= servo_deg[0] + (y_data / 16) - 2;
         end else if (y_data > 8'h29 && servo_deg[0] < 200) begin
-        	servo_deg[0] <= servo_deg[0] + ((y_data - 8'h29) / ((8'hF9 - 8'h29)/3));
+        	servo_deg[0] <= servo_deg[0] + ((y_data - 8'h29) / 64);
         end
     end
 
@@ -151,17 +177,18 @@ module main #(
     logic [$clog2(SCALE_X) - 1:0] scale_cntr_x = 0;
     logic [$clog2(SCALE_Y) - 1:0] scale_cntr_y = 0;
 
-    logic [7:0] text_buffer [1024/(C_H*SCALE_Y) - 1: 0][1280/(C_W*SCALE_X) - 1: 0];
+    logic [1024/(C_H*SCALE_Y) - 1: 0][1280/(C_W*SCALE_X) - 1: 0][7:0] text_buffer;
 
     logic [$clog2(C_W) - 1: 0] x_cntr = 0;
     logic [$clog2(C_H) - 1: 0] y_cntr = 0;
     logic [$clog2(HCC) - 1: 0] c_x = 0;
     logic [$clog2(VCC) - 1: 0] c_y = 0;
-    logic [$clog2(96)- 1:0] character_addr;
+    logic [$clog2(256)- 1:0] character_addr = text_buffer[0][0];
     wire [$clog2(96)- 1:0] ascii_addr;
-    assign ascii_addr = character_addr < 32? 0: character_addr - 32; //Address space compression
+    // assign ascii_addr = character_addr[6:0] < 32? 0: (character_addr[6:0] - 32) & (128 - 1); //Address space compression
     wire [C_H - 1 : 0][C_W - 1 : 0] char_buf;
-    rom #(.WIDTH(C_W*C_H), .DEPTH(96), .binaryFile("ascii.rom"), .RISING_EDGE(0)) ascii (.addr(ascii_addr), .data(char_buf), .clk(clk_108));
+    ram #(.WIDTH(C_W*C_H), .DEPTH(128), .binaryFile("ascii.rom")) ascii (.addr(character_addr[6:0]), .data(char_buf));
+    // rom #(.WIDTH(C_W*C_H), .DEPTH(96), .binaryFile("ascii.rom"), .RISING_EDGE(1)) ascii (.addr(ascii_addr), .data(char_buf), .clk(clk_108));
 
     logic enable_buffer_a;
     logic write_to_buffer = 0;
@@ -176,15 +203,13 @@ module main #(
     logic [64 - 1: 0][11:0] rrgbs;
 
     logic rst_dec = 1;
-    // logic [$clog2(64) - 1:0] dec_stack_ind;
-    // logic [$clog2(320) - 1:0] dec_stream_ind;
-    (* keep = "true" *) logic [12 - 1:0] dec_rgb;
-    (* keep = "true" *) wire dec_done;
+    logic [12 - 1:0] dec_rgb;
+    wire dec_done;
 
     wire [$clog2(1280):0] x;
     wire [$clog2(1024):0] y;
     wire vga_active;
-    (* keep = "true" *) logic dec_en;
+    logic dec_en;
 
     wire camera_state cam_state;
     wire pclk, href, vref;
@@ -207,12 +232,15 @@ module main #(
 
     vga_ctrl vga_c (.pclk(clk_108), .x(x), .y(y), .hsync(hsync), .vsync(vsync), .active(vga_active));
 
-    always @(negedge clk_25) begin
-        text_buffer[4][41+14 +:2] <= { <<8{hex(x_data[7:4]), hex(x_data[3:0])}};
-        text_buffer[5][41+14 +:2] <= { <<8{hex(y_data[7:4]), hex(y_data[3:0])}};
+    always @(posedge clk_108) begin
+        text_buffer[1][41+14 +:1] <= night_mode + "0";
+        text_buffer[2][41+14 +:1] <= flip + "0";
+        text_buffer[3][41+14 +:2] <= { <<8{hex(x_data_display1[7:4]), hex(x_data_display1[3:0])}};
+        text_buffer[4][41+14 +:2] <= { <<8{hex(y_data_display1[7:4]), hex(y_data_display1[3:0])}};
     end
 
     assign dec_en = vga_active && x < 640 && y < 480;
+    // assign character_addr = text_buffer[c_y][c_x];
     always @(posedge clk_108) begin
         {r,g,b} <= 12'b0;
         rst_dec <= 1;
@@ -250,7 +278,9 @@ module main #(
                         end
                     end 
                 end
-                {r,g,b} <= {12{char_buf[y_cntr][x_cntr]}};
+                if(char_buf[y_cntr][x_cntr]) begin
+                    {r,g,b} <= {12{char_buf[y_cntr][x_cntr] ^ character_addr[7]}};
+                end
             end             
             if (x < 640 && y < 480) begin
                 if (x == 640 - 1) begin
@@ -312,6 +342,10 @@ module main #(
         return {4'b0, in} + ((in < 10)?  "0" :  "A" - 10);
     endfunction
 
+    function logic [7:0] hl(logic [7:0] in);
+        return {1'b1, in[6:0]};
+    endfunction
+
     assign enable_buffer_a = 1;
 
     //Clock slower than ram
@@ -360,18 +394,9 @@ module main #(
 
     initial begin
         counter = 0;
-        text_buffer[1][41+:5] = { <<8{"hello"}};
-        text_buffer[2][41+:6] = { <<8{"Servo:"}};
-        text_buffer[3][41+:14] = { <<8{"Avg stream sz:"}};
-        text_buffer[4][41+:14] = { <<8{"Avg stack cnt:"}};
+        text_buffer[1][41+:12] = { <<8{"Night Mode:"}};
+        text_buffer[2][41+:12] = { <<8{"Image Flip:"}};
+        text_buffer[3][41+:12] = { <<8{"Joystick X :"}};
+        text_buffer[4][41+:12] = { <<8{"Joystick Y :"}};
     end
-
-    wire trig_ack;
-
-    // ila_0 dbg (.clk(pclk), .probe0(enc_rst_n),
-    //     .probe1(crgb),
-    //     .probe2(wcfb[0][7:0]),
-    //     .probe3(enc_en)
-    // );
-    // assign JC = {1'b0, 1'b0, hsync, vsync};
 endmodule

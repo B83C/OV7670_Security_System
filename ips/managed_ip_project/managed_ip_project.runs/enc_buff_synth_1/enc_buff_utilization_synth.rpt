@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
-| Tool Version : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
-| Date         : Fri Dec  6 22:38:41 2024
+| Tool Version : Vivado v.2024.2 (lin64) Build 5239630 Fri Nov 08 22:34:34 MST 2024
+| Date         : Sat Dec 21 14:15:49 2024
 | Host         : t14s running 64-bit Arch Linux
 | Command      : report_utilization -file enc_buff_utilization_synth.rpt -pb enc_buff_utilization_synth.pb
 | Design       : enc_buff

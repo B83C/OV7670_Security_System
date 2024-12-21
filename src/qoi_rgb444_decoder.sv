@@ -10,15 +10,11 @@ module qoi_rgb444_decoder #(
     output logic done
 );
 
-(* dont_touch = "yes" *) logic [$clog2(64) - 1:0] icntr = 0;
+logic [$clog2(64) - 1:0] icntr = 0;
 logic [$clog2(320) - 1:0] stream_ind = 0;
-// wire [$clog2(64) - 1:0] cntr;
-// logic [$clog2(64) - 1:0] stack_ind;
 
 assign done = stream_ind == 320;
 
-(* dont_touch = "yes" *) logic [7:0] current_input;
-(* dont_touch = "yes" *) assign current_input = input_stream[stream_ind];
 
 always @(posedge clk, negedge rst_n) begin
     if (!rst_n) begin

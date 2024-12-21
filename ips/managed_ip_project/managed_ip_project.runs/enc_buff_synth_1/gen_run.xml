@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GenRun Id="enc_buff_synth_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1733495856">
+<GenRun Id="enc_buff_synth_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1734761274">
+  <File Type="VDS-TIMINGSUMMARY" Name="enc_buff_timing_summary_synth.rpt"/>
   <File Type="RDS-DCP" Name="enc_buff.dcp"/>
   <File Type="RDS-UTIL-PB" Name="enc_buff_utilization_synth.pb"/>
-  <File Type="PA-TCL" Name="enc_buff.tcl"/>
   <File Type="RDS-UTIL" Name="enc_buff_utilization_synth.rpt"/>
+  <File Type="VDS-TIMING-PB" Name="enc_buff_timing_summary_synth.pb"/>
+  <File Type="PA-TCL" Name="enc_buff.tcl"/>
   <File Type="REPORTS-TCL" Name="enc_buff_reports.tcl"/>
   <File Type="RDS-RDS" Name="enc_buff.vds"/>
+  <File Type="RDS-PROPCONSTRS" Name="enc_buff_drc_synth.rpt"/>
   <FileSet Name="sources" Type="BlockSrcs" RelSrcDir="$PSRCDIR/enc_buff" RelGenDir="$PGENDIR/enc_buff">
     <File Path="$PPRDIR/../enc_buff/enc_buff.xci">
       <FileInfo>
@@ -39,7 +42,9 @@
     </Config>
   </FileSet>
   <Strategy Version="1" Minor="2">
-    <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2024"/>
+    <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2024">
+      <Desc>Vivado Synthesis Defaults</Desc>
+    </StratHandle>
     <Step Id="synth_design"/>
   </Strategy>
 </GenRun>

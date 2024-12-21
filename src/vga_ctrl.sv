@@ -22,9 +22,8 @@ localparam vcntr_bits = $clog2(VSYNC);
 
 logic [hcntr_bits:0] hcntr;
 logic [vcntr_bits:0] vcntr;
-logic hactive, vactive;
 
-assign active = hactive & vactive;
+assign active = (hcntr < HDISP) && (vcntr < VDISP);
 assign x = ($clog2(HDISP) + 1)'(hcntr);
 assign y = ($clog2(VDISP) + 1)'(vcntr);
 
@@ -41,33 +40,27 @@ always @(posedge pclk) begin
   end
 end
 
-always @(negedge pclk) begin
+always @(posedge pclk) begin
   case (hcntr) inside
     [0: HDISP - 1]: begin
       hsync <= 1;
-      hactive <= 1;
     end
     [HDISP + HFP - 1 : HDISP + HFP + HPW - 2]: begin
     	hsync <= 0;
-      hactive <= 0;
     end
     default : begin
       hsync <= 1;
-      hactive <= 0;
     end
   endcase
   case (vcntr) inside
     [0: VDISP - 1]: begin
       vsync <= 1;
-      vactive <= 1;
     end
     [VDISP + VFP - 1 : VDISP + VFP + VPW - 2]: begin
     	vsync <= 0;
-      vactive <= 0;
     end
     default : begin
       vsync <= 1;
-      vactive <= 0;
   end
   endcase
 end

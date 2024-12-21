@@ -1,3 +1,15 @@
+2024.2:
+ * Version 3.3 (Rev. 11)
+ * General: Minor changes in RTL. No functional changes.
+
+2024.1.2:
+ * Version 3.3 (Rev. 10)
+ * No changes
+
+2024.1.1:
+ * Version 3.3 (Rev. 10)
+ * No changes
+
 2024.1:
  * Version 3.3 (Rev. 10)
  * General: IP packaging adjustments to address warnings from IP Packager integrity check

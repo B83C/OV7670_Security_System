@@ -1,8 +1,8 @@
 -- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 -- Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
--- Tool Version: Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
--- Date        : Mon Dec  9 16:21:21 2024
+-- Tool Version: Vivado v.2024.2 (lin64) Build 5239630 Fri Nov 08 22:34:34 MST 2024
+-- Date        : Sat Dec 21 14:15:15 2024
 -- Host        : t14s running 64-bit Arch Linux
 -- Command     : write_vhdl -force -mode funcsim /home/b83c/fpga/vga/ips/joystick_adc/joystick_adc_sim_netlist.vhdl
 -- Design      : joystick_adc
